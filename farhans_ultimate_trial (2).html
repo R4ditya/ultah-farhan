@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farhan's Ultimate Trial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* slate-950 */
+            color: white;
+            overflow-x: hidden;
+        }
+        .font-arcade {
+            font-family: 'Press Start 2P', cursive;
+        }
+        .stage {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .stage.active {
+            display: flex;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .shake-animation {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        .heart {
+            transition: all 0.3s ease;
+        }
+        .heart.lost {
+            filter: grayscale(100%);
+            opacity: 0.3;
+            transform: scale(0.8);
+        }
+
+        .glitch-text {
+            font-family: monospace;
+            word-break: break-word;
+        }
+        .polaroid {
+            background: white;
+            padding: 8px 8px 30px 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transform: rotate(-2deg);
+            transition: transform 0.3s;
+        }
+        .polaroid:nth-child(even) {
+            transform: rotate(3deg);
+        }
+        .polaroid:hover {
+            transform: scale(1.05) rotate(0deg);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="game-container" class="relative w-full max-w-md bg-slate-900 border-2 border-slate-700 rounded-2xl p-6 md:p-8 shadow-2xl overflow-hidden transition-all duration-300">
+        
+        <!-- STAGE 1: Pintu Gerbang -->
+        <section id="stage-1" class="stage active flex-col items-center text-center space-y-6">
+            <div class="text-cyan-500 mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
+                </svg>
+            </div>
+            <h1 class="font-arcade text-lg text-cyan-400 leading-relaxed tracking-widest">SECURITY CHECK</h1>
+            <p class="text-slate-300 text-sm leading-relaxed border-l-4 border-cyan-500 pl-3 text-left">
+                <span class="text-xs text-slate-500 block mb-1">SYSTEM PROMPT:</span>
+                Akses ditolak. Jawab pertanyaan keamanan untuk verifikasi identitas:<br><br>
+                <span class="text-emerald-400 font-medium text-sm">"Siapa cowok paling chill, tempat curhat paling aman, temen nongkrong paling solid, dan cowok yang lagi nambah umur hari ini?"</span>
+                <br><br>
+                <span class="text-amber-400 text-xs font-mono">[ Clue: Inisialnya 'F' ]</span>
+            </p>
+            <div class="w-full space-y-3">
+                <input type="text" id="password-input" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-center text-cyan-300 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition shadow-inner font-mono placeholder-slate-600" placeholder="> Enter target name_">
+                <button onclick="checkPassword()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg transition transform hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+                    AUTHORIZE
+                </button>
+            </div>
+            <p id="password-error" class="text-rose-400 text-xs font-mono hidden">ERROR: INVALID TARGET.</p>
+        </section>
+
+        <!-- STAGE 2: Kuis Ujian Bestie -->
+        <section id="stage-2" class="stage flex-col items-center w-full">
+            <div class="w-full flex justify-between items-center mb-6 bg-slate-800 p-3 rounded-xl border border-slate-700">
+                <span class="font-arcade text-xs text-slate-300">HP:</span>
+                <div id="health-bar" class="flex space-x-1">
+                    <!-- Hearts will be generated by JS -->
+                </div>
+            </div>
+
+            <div class="w-full bg-slate-950 p-5 rounded-xl border border-slate-700 shadow-inner mb-6 text-center">
+                <h2 id="question-text" class="text-lg font-semibold text-emerald-300 mb-2">Pertanyaan...</h2>
+                <p id="question-counter" class="text-xs text-slate-500">Soal 1 dari 3</p>
+            </div>
+
+            <div id="options-container" class="w-full grid grid-cols-2 gap-3">
+                <!-- Options will be generated by JS -->
+            </div>
+        </section>
+
+        <!-- STAGE 3: Boss Fight (Buka Kado) -->
+        <section id="stage-3" class="stage flex-col items-center text-center space-y-8 py-8 relative min-h-[300px]">
+            <div class="text-amber-400 animate-bounce">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                </svg>
+            </div>
+            <div>
+                <h2 class="font-arcade text-lg text-amber-400 mb-2">KADO TERKUNCI!</h2>
+                <p class="text-slate-300 text-sm">Tangkap tombol di bawah untuk membuka kado.</p>
+            </div>
+            <!-- Tombol yang lari-lari -->
+            <button id="boss-btn" onmouseover="moveButton()" onclick="openGift()" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold py-3 px-6 rounded-full transition-all duration-200 shadow-[0_0_20px_rgba(245,158,11,0.6)] z-10 whitespace-nowrap">
+                BUKA KADO
+            </button>
+        </section>
+
+        <!-- STAGE 4: Sukses & Ucapan -->
+        <section id="stage-4" class="stage flex-col items-center text-center space-y-6 py-4 w-full">
+            <img src="https://placehold.co/150x150/06b6d4/ffffff?text=F" alt="Farhan" class="w-24 h-24 rounded-full border-2 border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.5)] object-cover animate-pulse mx-auto">
+            <div>
+                <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 font-arcade mt-2">
+                    LEVEL CLEARED!
+                </h1>
+                <h2 class="text-sm text-slate-400 mt-2">Happy Level-Up, <span class="text-amber-300 font-bold">Farhan Sybah Hakiki</span></h2>
+            </div>
+            
+            <!-- Panel Interaktif / Action Dashboard -->
+            <div class="w-full grid grid-cols-2 gap-3 mt-2">
+                <button onclick="superConfetti()" class="bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 border border-amber-500/30 font-semibold py-2 px-3 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 active:scale-95">
+                    <span class="text-lg">🎉</span> Party Mode
+                </button>
+                <button onclick="decryptMessage()" id="btn-decrypt" class="bg-slate-800 hover:bg-emerald-500 hover:text-slate-900 text-emerald-400 border border-emerald-500/30 font-semibold py-2 px-3 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 active:scale-95">
+                    <span class="text-lg">🔓</span> Decrypt Pesan
+                </button>
+                <button onclick="toggleGallery()" class="col-span-2 bg-slate-800 hover:bg-cyan-500 hover:text-slate-900 text-cyan-400 border border-cyan-500/30 font-semibold py-2 px-3 rounded-lg transition-all text-xs flex items-center justify-center gap-2 active:scale-95">
+                    <span class="text-lg">📸</span> Buka Brankas Memori
+                </button>
+            </div>
+
+            <!-- Teks Animasi Hacker (Disembunyikan di awal) -->
+            <div id="message-box" class="w-full bg-slate-900/80 p-5 rounded-xl border border-slate-700 text-sm text-slate-300 leading-relaxed text-left shadow-inner hidden">
+                <p id="glitch-p1" class="glitch-text text-cyan-300 mb-2"></p>
+                <p id="glitch-p2" class="glitch-text text-slate-300 mb-2"></p>
+                <p id="glitch-p3" class="glitch-text font-semibold text-emerald-400 mt-4 text-right"></p>
+            </div>
+
+            <!-- Galeri Foto Rahasia Ala Polaroid -->
+            <div id="secret-gallery" class="w-full grid grid-cols-2 sm:grid-cols-3 gap-4 hidden bg-slate-800 p-4 rounded-xl border border-slate-700 mt-2">
+                <div class="polaroid">
+                    <img src="0b586c26-5c1a-4f0b-8b9e-edf99bd9496a.jpg" class="w-full h-auto mb-2 aspect-square object-cover" alt="Aib 1">
+                    <p class="text-[10px] text-slate-800 font-semibold text-center">Pramuka elit, melet syulit 😝</p>
+                </div>
+                <div class="polaroid">
+                    <img src="43dc5511-4278-4069-b449-1c2a18a2110e.jpg" class="w-full h-auto mb-2 aspect-square object-cover" alt="Aib 2">
+                    <p class="text-[10px] text-slate-800 font-semibold text-center">Kaget liat apaan tuh bro? 📱</p>
+                </div>
+                <div class="polaroid">
+                    <img src="5435b801-9d0d-4175-8896-faa9d7ec932c.jpg" class="w-full h-auto mb-2 aspect-square object-cover" alt="Aib 3">
+                    <p class="text-[10px] text-slate-800 font-semibold text-center">Tidur apa nge-DJ? 🎧</p>
+                </div>
+                <div class="polaroid">
+                    <img src="a0d1bc2b-94a8-4bf3-a6d6-24c57f0e15ce.jpg" class="w-full h-auto mb-2 aspect-square object-cover" alt="Aib 4">
+                    <p class="text-[10px] text-slate-800 font-semibold text-center">Gaya andalan 😎</p>
+                </div>
+                <div class="polaroid">
+                    <img src="6056f757-7c17-49ef-b838-c77c61cc83e0.png" class="w-full h-auto mb-2 aspect-square object-cover" alt="Aib 5">
+                    <p class="text-[10px] text-slate-800 font-semibold text-center">Makan banggg 🍛</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Variables
+        let currentStage = 1;
+        let health = 5;
+        let currentQuestionIndex = 0;
+        let dodgeCount = 0;
+        const maxDodges = 5; // Supaya di HP bisa keklik setelah beberapa kali tap
+        
+        // Data Pertanyaan
+        const questions = [
+            {
+                q: "Siapa orang ter-imut di RPL?",
+                options: ["Radit", "Farhan", "Alip", "Pepbli", "Menlilmen", "Ajie"],
+                answer: "Farhan"
+            },
+            {
+                q: "Siapa orang yang paling chill di sekolah?",
+                options: ["Radit", "Farhan", "Alip", "Pepbli", "Menlilmen", "Ajie"],
+                answer: "Farhan"
+            },
+            {
+                q: "Siapa orang ter-bad boy?",
+                options: ["Radit", "Farhan", "Alip", "Pepbli", "Menlilmen", "Ajie"],
+                answer: "Pepbli"
+            }
+        ];
+
+        function switchStage(from, to) {
+            document.getElementById(`stage-${from}`).classList.remove('active');
+            document.getElementById(`stage-${to}`).classList.add('active');
+            currentStage = to;
+        }
+
+        function triggerShake() {
+            const container = document.getElementById('game-container');
+            container.classList.remove('shake-animation');
+            void container.offsetWidth; // Trigger reflow
+            container.classList.add('shake-animation');
+        }
+
+        function checkPassword() {
+            const input = document.getElementById('password-input').value.toLowerCase().trim();
+            const errorText = document.getElementById('password-error');
+
+            if (input === 'farhan' || input === 'farhan sybah' || input === 'farhan sybah hakiki') {
+                errorText.classList.add('hidden');
+                switchStage(1, 2);
+                initQuiz();
+            } else {
+                errorText.innerText = "Salah woy! Masa lupa nama sendiri. Ketik nama yang bener.";
+                errorText.classList.remove('hidden');
+                triggerShake();
+            }
+        }
+
+        // Handle Enter key for password
+        document.getElementById('password-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
+        function initQuiz() {
+            // Render Hearts
+            const healthBar = document.getElementById('health-bar');
+            healthBar.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                healthBar.innerHTML += `
+                    <svg id="heart-${i}" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-rose-500 heart fill-current" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                `;
+            }
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                // Kuis Selesai -> Lanjut Boss Fight
+                switchStage(2, 3);
+                return;
+            }
+
+            const qData = questions[currentQuestionIndex];
+            document.getElementById('question-text').innerText = qData.q;
+            document.getElementById('question-counter').innerText = `Soal ${currentQuestionIndex + 1} dari ${questions.length}`;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            qData.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "bg-slate-800 hover:bg-emerald-600 text-slate-200 font-semibold py-3 px-2 rounded-lg border border-slate-600 hover:border-emerald-500 transition active:scale-95 text-sm";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, qData.answer);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected, correct) {
+            if (selected === correct) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                health--;
+                triggerShake();
+                
+                // Update Health UI
+                if (health >= 0) {
+                    document.getElementById(`heart-${health}`).classList.add('lost');
+                }
+
+                if (health <= 0) {
+                    // Game Over alert (using a soft custom approach instead of window.alert)
+                    const container = document.getElementById('options-container');
+                    container.innerHTML = `
+                        <div class="col-span-2 text-center space-y-4 py-4">
+                            <p class="text-rose-500 font-bold text-lg">YAAH GAME OVER KOCAK!</p>
+                            <button onclick="location.reload()" class="bg-rose-600 text-white px-6 py-2 rounded-lg hover:bg-rose-700 transition">Ulang Lagi</button>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function moveButton() {
+            if (dodgeCount >= maxDodges) return; // Berhenti lari setelah beberapa kali
+            
+            const btn = document.getElementById('boss-btn');
+            const container = document.getElementById('stage-3');
+            
+            // Hapus class posisi awal biar gak numpuk
+            btn.classList.remove('left-1/2', '-translate-x-1/2', 'bottom-4');
+            
+            // Hitung batas maksimal supaya tombol nggak tembus container (dikurangi padding 20px)
+            const maxX = container.clientWidth - btn.clientWidth - 20;
+            const maxY = container.clientHeight - btn.clientHeight - 20;
+
+            // Bikin posisi random yang aman di dalam kotak
+            const randomX = Math.floor(Math.random() * maxX) + 10; 
+            const randomY = Math.floor(Math.random() * maxY) + 10;
+
+            btn.style.left = `${randomX}px`;
+            btn.style.top = `${randomY}px`;
+            btn.style.bottom = 'auto'; // Reset bottom bawaan Tailwind
+
+            dodgeCount++;
+
+            if(dodgeCount === maxDodges) {
+                 btn.innerText = "KLIK SEKARANG!";
+                 btn.classList.remove('bg-amber-500');
+                 btn.classList.add('bg-emerald-500', 'animate-pulse');
+            }
+        }
+
+        function openGift() {
+            switchStage(3, 4);
+            fireConfetti();
+            
+            // Fire multiple times for a grand effect
+            setTimeout(fireConfetti, 1000);
+            setTimeout(fireConfetti, 2000);
+        }
+
+        function fireConfetti() {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                var particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount,
+                    origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+                }));
+                confetti(Object.assign({}, defaults, { particleCount,
+                    origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+                }));
+            }, 250);
+        }
+
+        
+        // 1. Fitur Spam Kembang Api
+        function superConfetti() {
+            confetti({
+                particleCount: 150,
+                spread: 100,
+                origin: { y: 1 }, // Tembak dari bawah layar
+                colors: ['#06b6d4', '#10b981', '#f59e0b', '#f43f5e']
+            });
+        }
+
+        // 2. Fitur Buka Tutup Galeri Aib
+        function toggleGallery() {
+            const gallery = document.getElementById('secret-gallery');
+            if (gallery.classList.contains('hidden')) {
+                gallery.classList.remove('hidden');
+                // Auto scroll ke bawah biar galerinya kelihatan
+                setTimeout(() => gallery.scrollIntoView({ behavior: 'smooth' }), 100);
+            } else {
+                gallery.classList.add('hidden');
+            }
+        }
+
+        // 3. Fitur Dekripsi Pesan (Efek Hacker)
+        const realMessage = [
+            "Woy Farhan!",
+            "Selamat ulang tahun, bro! Makasih udah jadi temen nongkrong paling solid, tempat curhat paling aman, dan selalu chill dalam keadaan apapun.",
+            "- Partner in Crime mu"
+        ];
+
+        let isDecrypted = false;
+
+        function decryptMessage() {
+            if (isDecrypted) return; // Mencegah tombol dipencet 2 kali
+            
+            const btn = document.getElementById('btn-decrypt');
+            const msgBox = document.getElementById('message-box');
+            
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.innerText = "⏳ Decrypting...";
+            msgBox.classList.remove('hidden');
+
+            const targets = ['glitch-p1', 'glitch-p2', 'glitch-p3'];
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;':,./<>?";
+            
+            // Loop per paragraf untuk bikin efek ngetik alien
+            targets.forEach((targetId, index) => {
+                const el = document.getElementById(targetId);
+                const finalStr = realMessage[index];
+                let currentIteration = 0;
+                const totalIterations = 30 + (index * 15); // Paragraf bawah lebih lama selesainya
+                
+                const interval = setInterval(() => {
+                    let randomStr = "";
+                    for(let i = 0; i < finalStr.length; i++) {
+                        if (currentIteration > totalIterations * (i / finalStr.length)) {
+                            randomStr += finalStr[i]; // Teks asli mulai kelihatan
+                        } else {
+                            if(finalStr[i] === ' ') {
+                                randomStr += ' '; // Biarkan spasi tetap spasi
+                            } else {
+                                randomStr += chars[Math.floor(Math.random() * chars.length)]; // Teks acak
+                            }
+                        }
+                    }
+                    el.innerText = randomStr;
+                    
+                    if(currentIteration >= totalIterations) {
+                        clearInterval(interval);
+                        el.innerText = finalStr; // Tampilkan teks asli 100%
+                        
+                        // Kalau paragraf terakhir udah selesai
+                        if(index === targets.length - 1) {
+                            btn.innerText = "✅ Message Decrypted";
+                            isDecrypted = true;
+                        }
+                    }
+                    currentIteration++;
+                }, 40); // Kecepatan animasi
+            });
+            
+            setTimeout(() => msgBox.scrollIntoView({ behavior: 'smooth' }), 100);
+        }
+    </script>
+</body>
+</html>
